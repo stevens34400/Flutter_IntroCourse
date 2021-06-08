@@ -1,43 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/cart_provider.dart';
 import '../screens/product_detail_screen.dart';
+import '../providers/product.dart';
 
 class ProductItem extends StatelessWidget {
-  final String imageUrl;
-  final String id;
-  final String title;
-
-  ProductItem({this.imageUrl, this.id, this.title});
-
   @override
   Widget build(BuildContext context) {
+    final product = Provider.of<Product>(
+      context,
+      listen: false,
+    );
+    final cart = Provider.of<Cart>(
+      context,
+      listen: false,
+    );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: GridTile(
         child: GestureDetector(
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => ProductDetailScreen()),
-            );
+            Navigator.of(context).pushNamed(ProductDetailScreen.routeName,
+                arguments: product.id);
           },
           child: Image.network(
-            imageUrl,
+            product.imageUrl,
             fit: BoxFit.cover,
           ),
         ),
         footer: GridTileBar(
           backgroundColor: Colors.black54,
-          leading: IconButton(
-            onPressed: null,
-            icon: Icon(Icons.favorite),
-            color: Theme.of(context).accentColor,
+          leading: Consumer<Product>(
+            builder: (context, product, child) => IconButton(
+              onPressed: () {
+                product.toggleFavorite();
+              },
+              icon: Icon(
+                  product.isFavorite ? Icons.favorite : Icons.favorite_border),
+              color: Theme.of(context).accentColor,
+            ),
           ),
           title: Text(
-            title,
+            product.title,
             textAlign: TextAlign.center,
           ),
           trailing: IconButton(
-            onPressed: null,
+            onPressed: () =>
+                cart.addItem(product.id, product.price, product.title),
             icon: Icon(Icons.shopping_cart),
             color: Theme.of(context).accentColor,
           ),
