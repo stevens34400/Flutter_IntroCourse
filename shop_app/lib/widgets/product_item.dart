@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shop_app/providers/auth.dart';
 
 import '../providers/cart_provider.dart';
 import '../screens/product_detail_screen.dart';
@@ -16,6 +17,7 @@ class ProductItem extends StatelessWidget {
       context,
       listen: false,
     );
+    final authData = Provider.of<Auth>(context, listen: false);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -35,7 +37,7 @@ class ProductItem extends StatelessWidget {
           leading: Consumer<Product>(
             builder: (context, product, child) => IconButton(
               onPressed: () {
-                product.toggleFavorite();
+                product.toggleFavorite(authData.token, authData.userId);
               },
               icon: Icon(
                   product.isFavorite ? Icons.favorite : Icons.favorite_border),

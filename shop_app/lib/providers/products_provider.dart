@@ -42,6 +42,11 @@ class ProductsProvider with ChangeNotifier {
     // ),
   ];
 
+  final String authToken;
+  final String userId;
+
+  ProductsProvider(this.authToken, this.userId, this._items);
+
   List<Product> get items {
     return [..._items];
   }
@@ -55,23 +60,34 @@ class ProductsProvider with ChangeNotifier {
   }
 
   Future<void> fetchAndSetProducts() async {
-    var url = Uri.https(
-        'shop-app-58796-default-rtdb.firebaseio.com', '/products.json');
+    // print('test');
+    var url = Uri.https('shop-app-58796-default-rtdb.firebaseio.com',
+        '/products.json', {'auth': '$authToken'});
     final response = await http.get(url);
     // print(json.decode(response.body));
     final extractedData = json.decode(response.body) as Map<String, dynamic>;
+    // print(extractedData);
     if (extractedData == null) {
       return;
     }
+    url = (Uri.https(
+      'shop-app-58796-default-rtdb.firebaseio.com',
+      '/userFavorites/$userId.json',
+      {'auth': '$authToken'},
+    ));
+    final favoriteResponse = await http.get(url);
+    final favoriteData = json.decode(favoriteResponse.body);
     final List<Product> loadedProducts = [];
     extractedData.forEach((prodId, prodData) {
       loadedProducts.add(Product(
-          id: prodId,
-          description: prodData['description'],
-          imageUrl: prodData['imageUrl'],
-          price: prodData['price'],
-          title: prodData['title'],
-          isFavorite: prodData['isFavorite']));
+        id: prodId,
+        description: prodData['description'],
+        imageUrl: prodData['imageUrl'],
+        price: prodData['price'],
+        title: prodData['title'],
+        isFavorite:
+            favoriteData == null ? false : favoriteData[prodId] ?? false,
+      ));
     });
     _items = loadedProducts;
     notifyListeners();
@@ -79,16 +95,20 @@ class ProductsProvider with ChangeNotifier {
 
   Future<void> addProduct(Product product) async {
     var url = Uri.https(
-        'shop-app-58796-default-rtdb.firebaseio.com', '/products.json');
+      'shop-app-58796-default-rtdb.firebaseio.com',
+      '/products.json',
+      {'auth': '$authToken'},
+    );
     // var url = 'https://shop-app-58796-default-rtdb.firebaseio.com/products.json';
-    final response = await http.post(url,
-        body: json.encode({
-          'title': product.title,
-          'description': product.description,
-          'imageUrl': product.imageUrl,
-          'price': product.price,
-          'isFavorite': product.isFavorite,
-        }));
+    final response = await http.post(
+      url,
+      body: json.encode({
+        'title': product.title,
+        'description': product.description,
+        'imageUrl': product.imageUrl,
+        'price': product.price,
+      }),
+    );
 
     // print(json.decode(response.body));
     final newProduct = Product(
@@ -105,7 +125,10 @@ class ProductsProvider with ChangeNotifier {
     final prodIndex = _items.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
       var url = Uri.https(
-          'shop-app-58796-default-rtdb.firebaseio.com', '/products/$id.json');
+        'shop-app-58796-default-rtdb.firebaseio.com',
+        '/products/$id.json',
+        {'auth': '$authToken'},
+      );
       await http.patch(url,
           body: json.encode({
             'title': newProduct.title,
